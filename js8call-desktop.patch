@@ -1,0 +1,11 @@
+--- a/js8call.desktop
++++ b/js8call.desktop
+@@ -1,6 +1,6 @@
+ [Desktop Entry]
+ Version=1.0
+-Name=js8call
++Name=js8call-improved
+ Comment=Amateur Radio Weak Signal Operating
+-Exec=js8call
++Exec=js8call-improved
+ Icon=js8call_icon
