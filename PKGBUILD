@@ -9,7 +9,8 @@
 # https://github.com/michaellass/AUR
 
 pkgname=js8call-improved
-pkgver=2.5.1
+#pkgver=2.5.1
+pkgver=3.0.3
 pkgrel=1
 pkgdesc="Continued development of the JS8Call project"
 arch=('any')
@@ -26,11 +27,10 @@ depends=(
     fftw
     boost
 )
-options=(!lto)
-source=($pkgname-$pkgver.tar.gz::https://github.com/js8call-improved/js8call-improved/archive/refs/tags/release/$pkgver.tar.gz
-        js8call-desktop.patch)
-sha1sums=('a3ebe04fc89ada9fca66565f10743e585f3d26cf'
-          '0a89b3ae8beaddabf0575b99139d78efdeca27ca')
+options=(!lto !debug)
+
+source=($pkgname-$pkgver.tar.gz::https://github.com/js8call-improved/js8call-improved/archive/refs/tags/v$pkgver.tar.gz)
+sha1sums=('03bfe3da5d0ebc682c7af43958f6e49629e4753a')
 # As of 2.5.0 js8call-improved is the official upstream of js8call
 # https://github.com/JS8Call-improved/JS8Call-improved/issues/115#issuecomment-3706458851
 # https://github.com/JS8Call-improved/JS8Call-improved/releases/tag/release%2F2.5.0
@@ -38,9 +38,27 @@ provides=('js8call')
 conflicts=('js8call')
 
 prepare() {
-    mv "$srcdir/JS8Call-improved-release-$pkgver" "$srcdir/$pkgname-$pkgver"
+    mv "$srcdir/JS8Call-improved-$pkgver" "$srcdir/$pkgname-$pkgver"
     cd "$srcdir/$pkgname-$pkgver"
-    patch -p1 < "$srcdir/js8call-desktop.patch"
+
+    # JS8Call needs the VERSION variable set in CMakeLists.txt otherwise the resulting build
+    # is marked as a development version with a version string of "0.0.0"
+    # Set the VERSION string equal to the pkgver defined above
+    echo "Setting version"
+    sed -i -E "s/^([[:space:]]*VERSION[[:space:]]+)[0-9]+(\.[0-9]+)*$/\1${pkgver}/" CMakeLists.txt
+
+    # Copy the xdg menu entry file to our location
+    cp .github/workflows/misc/JS8Call.desktop ./
+
+    # Change the Exec line to point to the executable after installation
+    echo "Correcting Exec line"
+    sed -i 's|^Exec=.*|Exec=/usr/bin/JS8Call|' JS8Call.desktop
+
+    # Change the categories order to put HamRadio at the start of the list.
+    echo "Re-ordering categories"
+    sed -i '/^Categories=/{s/HamRadio;//;s|^Categories=|Categories=HamRadio;|;}' JS8Call.desktop
+
+    # create a build directory for compilation
     mkdir -p build
 }
 
@@ -58,7 +76,7 @@ build() {
 package() {
     cd "$srcdir/$pkgname-$pkgver"
 
-    install -D -m755 build/JS8Call "$pkgdir/usr/bin/js8call"
+    install -D -m755 build/JS8Call "$pkgdir/usr/bin/JS8Call"
     install -D -m644 icons/Unix/js8call_icon.png "$pkgdir/usr/share/icons/hicolor/128x128/apps/js8call_icon.png"
     install -D -m644 JS8Call.desktop "$pkgdir/usr/share/applications/JS8Call.desktop"
 }
